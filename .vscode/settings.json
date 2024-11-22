@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "__config": "c"
+    }
+
+    ,"configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/homebrew/include/SDL2",
+                "/opt/homebrew/include"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Library/Frameworks",
+                "/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "intelliSenseMode": "macos-clang-arm64"
+        }
+    ],
+    "version": 4
+}
