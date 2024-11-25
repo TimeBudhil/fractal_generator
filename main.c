@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 400
+#define WINDOW_HEIGHT 300
 
 
 //clang main.c -I/opt/homebrew/include/SDL2 -L/opt/homebrew/lib -lSDL2 -o game
@@ -60,6 +60,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     /**Main functions */
+    /**
+     * Function guide:
+     * SDL_SetRenderDrawColor changes the color of the pixel to be drawn
+     * SDL_RenderDrawPoint draws the color
+     */
 
     // Clear screen (black background) for now
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -133,3 +138,13 @@ int main(int argc, char* argv[]) {
 
 
 
+
+/**
+ * Notes from Ellie
+ * Get vectors instead of pixels
+ * pixels are rastor data – assigning points on a screen
+ * 
+ * Vectorized data – a different kind of line that comes out of adobe
+ * - when scaled up, it looks just as high definition
+ * - it scales distances rather than specific points. 
+ */
