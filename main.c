@@ -4,18 +4,20 @@
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 900
+#define MAX_ITERATIONS 50 // the number of iterations to be run per individual pixel
 
-double scale_number(double cv, double min, double max, double nmin, double nmax){
-    double range1 = max - min;
-    double range2 = nmax - nmin;
+typedef struct colors{
+    int red;
+    int blue;
+    int green;
+}colors;
 
-    double new_number = ((cv * range2)/range1) + (nmin);
-    return new_number;
-}
-
-int choose_brightness_mandelblot(int i, int j, float minsize, float maxsize);
-void create_mandelbrot(SDL_Renderer * renderer, float scale);
-
+double scale_number(double cv, double min, double max, double nmin, double nmax);
+int max(int a, int b);
+void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize);
+void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize);
+void create_mandelbrot(SDL_Renderer * renderer, float scale, int which);
+void heatmap(float minimum, float maximum, float val, int* r, int* g, int* b);
 //clang main.c -I/opt/homebrew/include/SDL2 -L/opt/homebrew/lib -lSDL2 -o game
 int main(int argc, char* argv[]) {
 
@@ -80,7 +82,7 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    create_mandelbrot(renderer, -2);
+    create_mandelbrot(renderer, -2, 2);
     // //places in the middle
     // for(int i = 0; i < WINDOW_WIDTH; i++){
     //     for(int j = 0; j < WINDOW_HEIGHT; j++){
@@ -119,25 +121,21 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-
-
 /**
  * making brightness on mandelblot
  */
-int choose_brightness_mandelblot(int i, int j, float minsize, float maxsize){
+void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize){
     double a = scale_number((double)i, 0, WINDOW_WIDTH, minsize, maxsize);
     double b = scale_number((double)j, 0, WINDOW_HEIGHT, minsize, maxsize);
 
 
     int iterations = 0; 
-    int maxiterations = 50;
     int isInfinite = 16;
     double ca = a; // constant
     double cb = b; //constant
 
     //for each pixel, check if it's infinite or not
-    while (iterations < maxiterations){
+    while (iterations < MAX_ITERATIONS){
         double aa = a * a - b * b;
         double bb = 2 * a * b;
 
@@ -158,68 +156,116 @@ int choose_brightness_mandelblot(int i, int j, float minsize, float maxsize){
 
     //mapping function
 
-    double scaled = scale_number((double)iterations, 0, maxiterations, 0, 1);
+    double scaled = scale_number((double)iterations, 0, MAX_ITERATIONS, 0, 1);
     int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
     //if in mandelbrot make color black. 
-    if(iterations >= maxiterations){
+    if(iterations >= MAX_ITERATIONS){
         brightness = 0;
     }
-    return brightness;
+
+    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    SDL_RenderDrawPoint(renderer, i, j);
 }
 
-void create_mandelbrot(SDL_Renderer * renderer, float scale){
+void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize){
+    double a = scale_number((double)i, 0, WINDOW_WIDTH, minsize, maxsize);
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minsize, maxsize);
+
+
+    int iterations = 0; 
+    int isInfinite = 16;
+    double ca = a; // constant
+    double cb = b; //constant
+
+    //for each pixel, check if it's infinite or not
+    while (iterations < MAX_ITERATIONS){
+        double aa = a * a - b * b;
+        double bb = 2 * a * b;
+
+        a = aa + ca;
+        b = bb + cb;
+
+        double check_bounds = a + b;
+        //convert to absolute
+        if(check_bounds < 0){
+            check_bounds *= -1;
+        }
+
+        if(check_bounds > isInfinite){
+            break;
+        }
+        iterations++;
+    }//end while
+
+    //mapping function
+    // int brightness = scale_number((double)iterations, 0, MAXITERATIONS, 0, 255);
+    
+    int red = 0;
+    int green = 0;
+    int blue = 0;
+    if (iterations < MAX_ITERATIONS) {
+        heatmap(0, MAX_ITERATIONS, iterations, &red, &green, &blue);
+    } else {
+        red = 0;
+        green = 0;
+        blue = 0;
+    }
+
+    // Choose white color
+    SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
+    double scaled = scale_number((double)iterations, 0, MAX_ITERATIONS, 0, 1);
+    int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
+
+    //if in mandelbrot make color black. 
+    if(iterations >= MAX_ITERATIONS){
+        brightness = 0;
+    }
+
+    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    SDL_RenderDrawPoint(renderer, i, j);
+}//end choose_heat_map_mandelbrot
+
+void create_mandelbrot(SDL_Renderer * renderer, float scale, int which){
 
     //places in the middle
     for(int i = 0; i < WINDOW_WIDTH; i++){
         for(int j = 0; j < WINDOW_HEIGHT; j++){
-            int brightness = choose_brightness_mandelblot(i, j, scale * -1, scale);
+            switch (which)
+            {
+            case 1:
+                choose_brightness_mandelbrot(renderer, i, j, scale * -1, scale);
+                break;
+            case 2:
+                choose_heatmap_mandelbrot(renderer, i, j, scale * -1, scale);
+            default:
+                choose_brightness_mandelbrot(renderer, i, j, scale * -1, scale);
+                break;
+            }
             
-            // Choose white color
-            SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
-            SDL_RenderDrawPoint(renderer, i, j);
-
         }//end for
     }//end for
 
 }//end create_Mandelbrot
 
-/**Previous attempts of coding */
-    // /**Creating Textrues
-    //  * First initialize,
-    //  * 
-    //  * Then draw to the textures
-    //  * 
-    //  * Then use those textures to draw different colors
-    //  */
-    // auto red_texture = SDL_CreateTexture(renderer, 
-    // SDL_PIXEL_FORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH,WINDOW_HEIGHT);
-    // SDL_SetRenderTarget(renderer, red_texture); // select target
-    // SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); //set color to read
-    // SDL_RenderClear(renderer);
+int max(int a, int b){
+    return a > b ? a : b;
+} 
 
-    // //  blue texture
-    // auto blue_texture = SDL_CreateTexture(renderer, 
-    // SDL_PIXEL_FORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH,WINDOW_HEIGHT);
-    // SDL_SetRenderTarget(renderer, blue_texture); // select target
-    // SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); //set color to read
-    // SDL_RenderClear(renderer);
-    
-    // /**Show textures for screen */
-    // SDL_SetRenderTarget(renderer, nullptr);
+// This function takes a value and maps it to a color on a heatmap according
+void heatmap(float minimum, float maximum, float val, int* r, int* g, int* b) {
+    float ratio = 2 * (val - minimum) / (maximum - minimum);
+    *b = max(0, (int) 255*(1 - ratio));
+    *r = max(0, (int) 255*(ratio - 1));
+    *g = 255 - *b - *r;
+}
+double scale_number(double cv, double min, double max, double nmin, double nmax){
+    double range1 = max - min;
+    double range2 = nmax - nmin;
 
-    // // Show red texture
-    // SDL_RenderCopy(renderer, red_texture, nullptr, nullptr);
-    // SDL_RendererPresent(renderer);
-    // SDL_Delay(10000);
-
-    // // show blue textures
-    // SDL_RenderCopy(renderer, red_texture, nullptr, nullptr);
-    // SDL_RendererPresent(renderer);
-    // SDL_Delay(10000);
-
-
-
+    double new_number = ((cv * range2)/range1) + (nmin);
+    return new_number;
+}
 
 /**
  * Notes from Ellie
