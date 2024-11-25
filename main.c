@@ -2,8 +2,33 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 300
+#define WINDOW_WIDTH 1800
+#define WINDOW_HEIGHT 1200
+
+
+double scale_number(double cv, double min, double max, double nmin, double nmax){
+    double range1 = max - min;
+    double range2 = nmax - nmin;
+
+    double new_number = ((cv * range2)/range1) + (nmin);
+    return new_number;
+}
+// double scale_number(double current_val, double min, double max){
+//     double range1 = max - min;
+//     double range2 = 4;
+//     double new_number = ((current_val * range2)/range1) - 2;
+
+//     return new_number;
+// } //to -2 2
+
+
+// double scale_number2(double current_val, double min, double max){
+//     double range1 = max - min;
+//     double range2 = 255;
+//     double new_number = ((current_val * range2)/range1);
+
+//     return new_number;
+// } //to 0 to 255
 
 
 //clang main.c -I/opt/homebrew/include/SDL2 -L/opt/homebrew/lib -lSDL2 -o game
@@ -70,11 +95,50 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // Draw white pixel in center
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
     //places in the middle
-    SDL_RenderDrawPoint(renderer, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    for(int i = 0; i < WINDOW_WIDTH; i++){
+        for(int j = 0; j < WINDOW_HEIGHT; j++){
+            double a = scale_number((double)i, 0, WINDOW_WIDTH, -2, 2);
+            double b = scale_number((double)j, 0, WINDOW_HEIGHT, -2, 2);
+
+
+            int iterations = 0; 
+            int maxiterations = 50;
+            int isInfinite = 16;
+            double ca = a; // constant
+            double cb = b; //constant
+
+            //for each pixel, check if it's infinite or not
+            while (iterations < maxiterations){
+                double aa = a * a - b * b;
+                double bb = 2 * a * b;
+
+                a = aa + ca;
+                b = bb + cb;
+
+                double check_bounds = a + b;
+                //convert to absolute
+                if(check_bounds < 0){
+                    check_bounds *= -1;
+                }
+
+                if(check_bounds > isInfinite){
+                    break;
+                }
+                iterations++;
+            }//end while
+
+            //mapping function
+            int brightness = scale_number((double)iterations, 0, maxiterations, 0, 255);
+            
+            // Choose white color
+            SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+            SDL_RenderDrawPoint(renderer, i, j);
+
+        }//end for
+    }//end for
+    //SDL_RenderDrawPoint(renderer, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
 
     // Update screen
     SDL_RenderPresent(renderer);
