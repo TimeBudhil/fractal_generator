@@ -8,22 +8,30 @@
 //The smaller the window, the more easily the pages will load. 
 #define WINDOW_WIDTH 400
 #define WINDOW_HEIGHT 300
+
+
 // the number of iterations to be run per individual pixel
-#define MAX_ITERATIONS 50  // the higher this value is the, more "concrete" the fractal will look
+//if you zoom in increase the cap of these iterations
+// zoomed in coordinate conversion just another coordinate conversion
+int maxIterations = 100;  // the higher this value is the, more "concrete" the fractal will look
 
 // Initialize the variables to click the screen to move and zoom in or out.
 int mouseClickX = -1;
 int mouseClickY = -1;
 
 
-// Global variables to zoom in and out according to the specifications 
-double centerX = 0.0;  // Center of the view in the complex plane
-double centerY = 0.0;
-
-double zoomScale = 1.0;  // Zoom scale factor, this is how zoomed in there is
-double zoomRL = 0.0; // how much right or left we go. 
+// Global for modifying specifications and parameters of the fractals
+double centerX = 0.0;  // how much right or left we go.  (multiply against zoomscale to be proportional) on complex plane
+double centerY = 0.0;  //how much up or down we go (multiply against zoomscale to be proportional) on complex plane
+double zoomScale = 1.0;  // Zoom scale factor
 double baseWidth = 4.0;  // Base width of the view in complex plane
-double keyboardSpeed = 0.5;  // Speed of scrolling
+double baseHeight = 4.0;  // Base width of the view in complex plane
+double keyboardSpeed = 0.1;  // Speed of scrolling
+int which = 1; //which set are we using?
+double minimumReal;
+double maximumReal;
+double maximumComplex;
+double minimumComplex;
 
 /**
  * Scalenumber–maps a current value index of a one-dimensional field onto a larger field.
@@ -71,7 +79,38 @@ int max(int a, int b);
  * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
  * This version of the function is only black and white
  */
-void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize);
+void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j);
+
+
+/**
+ * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
+ * @param renderer, pointer to the renderer of SDL which is where the pixel will be drawn (within the function)
+ * @param i, the x coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * @param j, the y coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * @param minsize, scaling factor of the mandelbrot–based on how zoomed in the current image is or not
+ * @param maxsize, scaling factor of the mandelbrot–based on how zoomed in the current image is or not
+ * 
+ * Quick explanation of scaling: The wider apart @param minsize and @param maxsize are, the more zoomed out
+ * the image will be. If minsize + maxsize = 0, the image will be centered. If it's negative, the image will
+ * be shifted right, and if positive, shifted left. 
+ * 
+ * Note: this is ONE pixel in one image of the mandelbrot–i.e. this function will be called WINDOW_WIDTH * WINDOW_HEIGHT
+ * times.
+ * 
+ * This function draws the pixels according to the mandelbrot formula: z^2 + c;
+ * The product of z^2 + c is applied into z, so the next iteration of z^2 + c = (z^2 + c)^2 + c
+ * This is on the complex plane, so the values iterate and sometimes reach infinity, and sometimes don't. 
+ * That is what the  MAX_ITERATIONS macro means–how many times we iterate this fomrula until it's too much. 
+ * Technically, this can go on infinitely. But we cap it at 50, other tutorials cap this at 16 (the coding challenge)
+ * Depending on the value and graphing this on the complex plane, coloring the values that result in a cycling towards infinity one color,
+ * and coloring the other pixels white, we get the mandelbrot set fractal. The Julia set has a very similar iterative process, which
+ * can have values that can be adjusted. 
+ * 
+ * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
+ * This version of the function is colored
+ */
+void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j);
+
 
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
@@ -101,7 +140,7 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float m
  * This version of the function is based on the heatmap function–@KEVIN INSERT SOURCE HERE
  * that bases the color on the function heatmap..
  */
-void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize);
+void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j);
 
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
@@ -110,7 +149,7 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float mins
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
-void create_mandelbrot(SDL_Renderer * renderer, float scale, int which);
+void create_mandelbrot(SDL_Renderer * renderer, int which);
 
 /**Function heatmap takes a point and determines the points color based on its location 
  * @kevin please commment!, and add this not only to this header call but also to the actual function below
@@ -151,8 +190,6 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-
-
 
     /** Renderer used to draw pixels */
     // Create renderer
@@ -207,13 +244,21 @@ int main(int argc, char* argv[]) {
                 quit = true;
 
                 /*Mouse operations–clicking and holding*/
-            }  else if (event.type == SDL_MOUSEBUTTONDOWN) { 
+            } else if (event.type == SDL_MOUSEBUTTONDOWN) { 
                 // When mouse is clicked, capture the click position
                 if (event.button.button == SDL_BUTTON_LEFT) { 
                     /**Ideally, we would want
                      * the clicking of the button to zoom into that location specifically
                      * secondly, we would want holding the click in that location to be a zooming into that location. 
                      */
+
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    printf("Mouse clicked at (%d, %d)\n", x, y);
+                    centerX = scale_number(x, 0, WINDOW_HEIGHT, minimumReal, maximumReal);
+                    centerY = scale_number(y, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
+            
+                    zoomScale *= 0.9;
                     // mouseClickX = event.button.x;
                     // mouseClickY = event.button.y;
 
@@ -248,19 +293,43 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_LEFT:
                         // Scroll left (move view to the left)
-                        centerX -= keyboardSpeed * (baseWidth * zoomScale);
+                        centerX -= keyboardSpeed * zoomScale;
                         break;
                     case SDLK_RIGHT:
                         // Scroll right (move view to the right)
-                        centerX += keyboardSpeed * (baseWidth * zoomScale);
+                        centerX += keyboardSpeed * zoomScale;
                         break;
                     case SDLK_UP:
                         // Scroll up (move view up)
-                        centerY -= keyboardSpeed * (baseWidth * zoomScale);
+                        centerY += keyboardSpeed * zoomScale;
                         break;
                     case SDLK_DOWN:
                         // Scroll down (move view down)
-                        centerY += keyboardSpeed * (baseWidth * zoomScale);
+                        centerY -= keyboardSpeed * zoomScale;
+                        break;
+                    case SDLK_EQUALS:
+                        zoomScale *= 0.9;
+                        break;
+                    case SDLK_MINUS:
+                        zoomScale /= 0.9;
+                        break;
+                    case SDLK_i:
+                        maxIterations++;
+                        break;
+                    case SDLK_o:
+                        maxIterations--;
+                        break;
+                    case SDLK_n: //n for negative
+                        zoomScale *= -1;
+                        break;
+                    case SDLK_1: 
+                        which = 1;
+                        break;
+                    case SDLK_2: 
+                        which = 2;
+                        break;
+                    case SDLK_3: 
+                        which = 3;
                         break;
                     case SDLK_r:
                         // Reset to original view
@@ -274,23 +343,20 @@ int main(int argc, char* argv[]) {
             } else if (event.type == SDL_MOUSEWHEEL) {
                 // Zoom logic (same as before)
                 if (event.wheel.y > 0) { // Scroll up (zoom in)
-                    zoomScale *= 0.8;  // Zoom in by reducing scale
+                    zoomScale *= 0.9;  // Zoom in by reducing scale
                 } else if (event.wheel.y < 0) { // Scroll down (zoom out)
-                    zoomScale /= 0.8;  // Zoom out by increasing scale
-                } else if(event.wheel.x > 0){//scroll right
-                    zoomRL += 0.1;
-                } else if(event.wheel.x < 0){//scroll left
-                    zoomRL -= 0.1;
-                }
+                    zoomScale /= 0.9;  // Zoom out by increasing scale
+                } 
+                
             } else if (event.type == SDL_MOUSEMOTION) {
-                // Optional: Pan functionality with right mouse button
-                if (event.motion.state & SDL_BUTTON_RMASK) {
-                    // Right mouse button dragging to pan
-                    double panX = event.motion.xrel * (baseWidth * zoomScale) / WINDOW_WIDTH;
-                    double panY = event.motion.yrel * (baseWidth * zoomScale) / WINDOW_HEIGHT;
-                    centerX -= panX;
-                    centerY -= panY;
-                }
+                // // Optional: Pan functionality with right mouse button
+                // if (event.motion.state & SDL_BUTTON_RMASK) {
+                //     // Right mouse button dragging to pan
+                //     double panX = event.motion.xrel * (baseWidth * zoomScale) / WINDOW_WIDTH;
+                //     double panY = event.motion.yrel * (baseHeight * zoomScale) / WINDOW_HEIGHT;
+                //     centerX -= panX;
+                //     centerY -= panY;
+                // }
             }
         }
 
@@ -299,7 +365,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         // Modify create_mandelbrot to use new zoom parameters
-        create_mandelbrot(renderer, zoomScale, 1);
+        create_mandelbrot(renderer, which);
 
         // Update screen
         SDL_RenderPresent(renderer);
@@ -340,18 +406,17 @@ int main(int argc, char* argv[]) {
  * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
  * This version of the function is only black and white
  */
-void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize){
-    double a = scale_number((double)i, 0, WINDOW_WIDTH, minsize, maxsize);
-    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minsize, maxsize);
-
+void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j){
+    double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal); //real
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
 
     int iterations = 0; 
-    int isInfinite = 16;
+    int isInfinite = 25;
     double ca = a; // constant
     double cb = b; //constant
 
     //for each pixel, check if it's infinite or not
-    while (iterations < MAX_ITERATIONS){
+    while (iterations < maxIterations){
         double aa = a * a - b * b;
         double bb = 2 * a * b;
 
@@ -371,20 +436,11 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float m
     }//end while
 
     //mapping function
-
-    /**
-     * Scalenumber
-     * @param cv the current value that we want to transform
-     * @param min the current scale (one-dimensional) minimum
-     * @param max the current scale (one-dimensional) maximum
-     * @param nmin the transformed scale (one-dimensional) minimum
-     * @param nmax the transformed scale (one-dimensional) maximum
-     */
-    double scaled = scale_number((double)iterations, 0, MAX_ITERATIONS, 0, 1);
+    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
     int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
     //if in mandelbrot make color black. 
-    if(iterations >= MAX_ITERATIONS){
+    if(iterations >= maxIterations){
         brightness = 0;
     }
 
@@ -420,9 +476,9 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j, float m
  * This version of the function is based on the heatmap function–@KEVIN INSERT SOURCE HERE
  * that bases the color on the function heatmap..
  */
-void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float minsize, float maxsize){
-    double a = scale_number((double)i, 0, WINDOW_WIDTH, minsize, maxsize);
-    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minsize, maxsize);
+void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j){
+    double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal);
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
 
 
     int iterations = 0; 
@@ -431,7 +487,7 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float mins
     double cb = b; //constant
 
     //for each pixel, check if it's infinite or not
-    while (iterations < MAX_ITERATIONS){
+    while (iterations < maxIterations){
         double aa = a * a - b * b;
         double bb = 2 * a * b;
 
@@ -456,8 +512,8 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float mins
     int red = 0;
     int green = 0;
     int blue = 0;
-    if (iterations < MAX_ITERATIONS) {
-        heatmap(0, MAX_ITERATIONS, iterations, &red, &green, &blue);
+    if (iterations < maxIterations) {
+        heatmap(0, maxIterations, iterations, &red, &green, &blue);
     } else {
         red = 0;
         green = 0;
@@ -466,11 +522,11 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float mins
 
     // Choose white color
     SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
-    double scaled = scale_number((double)iterations, 0, MAX_ITERATIONS, 0, 1);
+    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
     int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
     //if in mandelbrot make color black. 
-    if(iterations >= MAX_ITERATIONS){
+    if(iterations >= maxIterations){
         brightness = 0;
     }
 
@@ -479,34 +535,125 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j, float mins
 }//end choose_heat_map_mandelbrot
 
 /**
+ * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
+ * @param renderer, pointer to the renderer of SDL which is where the pixel will be drawn (within the function)
+ * @param i, the x coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * @param j, the y coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * @param minsize, scaling factor of the mandelbrot–based on how zoomed in the current image is or not
+ * @param maxsize, scaling factor of the mandelbrot–based on how zoomed in the current image is or not
+ * 
+ * Quick explanation of scaling: The wider apart @param minsize and @param maxsize are, the more zoomed out
+ * the image will be. If minsize + maxsize = 0, the image will be centered. If it's negative, the image will
+ * be shifted right, and if positive, shifted left. 
+ * 
+ * Note: this is ONE pixel in one image of the mandelbrot–i.e. this function will be called WINDOW_WIDTH * WINDOW_HEIGHT
+ * times.
+ * 
+ * This function draws the pixels according to the mandelbrot formula: z^2 + c;
+ * The product of z^2 + c is applied into z, so the next iteration of z^2 + c = (z^2 + c)^2 + c
+ * This is on the complex plane, so the values iterate and sometimes reach infinity, and sometimes don't. 
+ * That is what the  MAX_ITERATIONS macro means–how many times we iterate this fomrula until it's too much. 
+ * Technically, this can go on infinitely. But we cap it at 50, other tutorials cap this at 16 (the coding challenge)
+ * Depending on the value and graphing this on the complex plane, coloring the values that result in a cycling towards infinity one color,
+ * and coloring the other pixels white, we get the mandelbrot set fractal. The Julia set has a very similar iterative process, which
+ * can have values that can be adjusted. 
+ * 
+ * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
+ * This version of the function is colored
+ */
+void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
+
+    //map x and y (a and b) from the window width/heigh (0 to width or height) to 
+    // minimum size and maximum size
+    double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal);
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
+
+
+    int iterations = 0; 
+    int isInfinite = 16;
+    double ca = a; // constant
+    double cb = b; //constant
+
+    //for each pixel, check if it's infinite or not
+    while (iterations < maxIterations){
+        double aa = a * a - b * b;
+        double bb = 2 * a * b;
+
+        a = aa + ca;
+        b = bb + cb;
+
+        double check_bounds = a + b;
+        //convert to absolute
+        if(check_bounds < 0){
+            check_bounds *= -1;
+        }
+
+        if(check_bounds > isInfinite){
+            break;
+        }
+        iterations++;
+    }//end while
+
+    //mapping function
+    //where does this mask details?
+    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 100);
+    int brightness = scale_number(sqrt(scaled), 0, 100, 0, 255);
+
+    //if in mandelbrot make color black. 
+    if(iterations >= maxIterations){
+        brightness = 0;
+    }
+
+    /* Uint8 r, Uint8 g, Uint8 b, */
+    // int r, b, g;
+    /* i, j, minsize, maxsize, */
+    /* scale_number, */
+
+    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    SDL_RenderDrawPoint(renderer, i, j);
+}
+
+/**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
  * @param which – decides which fractal we will use
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
-void create_mandelbrot(SDL_Renderer * renderer, float scale, int which){
-    double halfWidth = baseWidth * scale / 2.0;
+void create_mandelbrot(SDL_Renderer * renderer, int choice){
+    double halfWidth = baseWidth*zoomScale/2.0;
+    double halfHeight = baseHeight*zoomScale/2.0;
     
     for(int i = 0; i < WINDOW_WIDTH; i++) {
         for(int j = 0; j < WINDOW_HEIGHT; j++) {
             //the distance between minsize and maxsize = the zooming scale
             //if it's right centered or left centered around 0 = which part of mandelbrot
-            double minsize = centerX - halfWidth;
-            double maxsize = centerX + halfWidth;
-            minsize += centerY;
-            maxsize += centerY;
-            
-            switch (which)
+
+            /**
+             * base height/width. The distance between is how zoomed in
+             * centerX is the overall shift left or right (between minsize and maxsize)
+             * centerY is the 
+             * 
+             * zoomScale is the distance between minsize and maxsize; greater the value, the greater the distance
+             * 
+             */
+            minimumReal = centerX - halfWidth; //distance to max = zoomin/out;
+            maximumReal = centerX + halfWidth; //distance to min = zoomin/out; 
+            minimumComplex = centerY + halfHeight; 
+            maximumComplex = centerY -  halfHeight;
+
+    
+
+            //choose which version of the mandelbrot to use
+            switch (choice)
             {
             case 1:
-
-                choose_brightness_mandelbrot(renderer, i, j, minsize, maxsize);
+                choose_brightness_mandelbrot(renderer, i, j);
                 break;
             case 2:
-                choose_heatmap_mandelbrot(renderer, i, j, minsize, maxsize);
+                choose_heatmap_mandelbrot(renderer, i, j);
             default:
-                choose_brightness_mandelbrot(renderer, i, j, minsize, maxsize);
+                choose_brightness_mandelbrot(renderer, i, j);
                 break;
             }
             

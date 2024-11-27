@@ -14,7 +14,7 @@ BUILD_DIR = build
 BIN_DIR = bin
 
 # Files
-EXECUTABLE = $(BIN_DIR)/game
+EXECUTABLE = $(BIN_DIR)/main
 SOURCES = $(SRC_DIR)/main.c
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
