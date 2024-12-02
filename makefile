@@ -5,8 +5,8 @@
 # Compiler settings
 CC = clang
 CFLAGS = -Wall -Wextra -g
-SDL_INC = -I/opt/homebrew/include/SDL2
-SDL_LIB = -L/opt/homebrew/lib -lSDL2
+SDL_INC = $(shell sdl2-config --cflags)
+SDL_LIB = $(shell sdl2-config --libs)
 
 # Directories
 SRC_DIR = .
@@ -26,7 +26,7 @@ all: $(EXECUTABLE)
 
 # Link the executable
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) $(SDL_LIB) -o $@
+	$(CC) $(OBJECTS) $(SDL_LIB) -o $@ -lm
 
 # Compile source files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c

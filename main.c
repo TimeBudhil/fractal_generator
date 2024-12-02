@@ -1,6 +1,7 @@
 #include <SDL.h> // include SDL<-- this must be linked properly in whatever programming is made
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 
 /** consider these functions:
  * https://discourse.libsdl.org/t/proposal-vector-graphics-api/27938
