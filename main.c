@@ -6,6 +6,11 @@
  * https://discourse.libsdl.org/t/proposal-vector-graphics-api/27938
  */
 
+/**
+ * Numeric limit – doubles have a max representation
+ * 
+ * pixels vs vectors 
+ */
 
 //adjust window width and height to your wishes. 
 //The smaller the window, the more easily the pages will load. 
@@ -37,6 +42,7 @@ double maximumComplex;
 double minimumComplex;
 double constantReal = 0;// real constant ("constant" in terms of the julia equation) portion of the julia set.
 double constantComplex = 0; //complex constant ("constant" in terms of the julia equation) portion of the julia set
+double isInfinite = 25;
 
 /**
  * Scalenumber–maps a current value index of a one-dimensional field onto a larger field.
@@ -315,16 +321,22 @@ int main(int argc, char* argv[]) {
                     case SDLK_n: //n for negative
                         zoomScale *= -1;
                         break;
-
+                    case SDLK_g:
+                        isInfinite++;
+                    case SDLK_h:
+                        isInfinite--;
                         /**Changing colors */
                     case SDLK_1: 
                         which = 1;
+                        printf("which: %d\n", which);
                         break;
                     case SDLK_2: 
                         which = 2;
+                        printf("which: %d\n", which);
                         break;
                     case SDLK_3: 
                         which = 3;
+                        printf("which: %d\n", which);
                         break;
                     case SDLK_r:
                         // Reset to original view
@@ -600,9 +612,10 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
 
     int iterations = 0; 
-    int isInfinite = 25;// this is a variable I haven't experienced with much. 
+    // this is a variable I haven't experienced with much. 
     double ca = a; // constant
     double cb = b; //constant
+    double check_bounds;
 
     //for each pixel, check if it's infinite or not
     while (iterations < maxIterations){
@@ -612,7 +625,7 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
         a = aa + ca;
         b = bb + cb;
 
-        double check_bounds = a + b;
+        check_bounds = a + b;
         //convert to absolute
         if(check_bounds < 0){
             check_bounds *= -1;
@@ -641,8 +654,12 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     if(iterations >= maxIterations){
         brightness = 0;
     }
-    
-    SDL_SetRenderDrawColor(renderer, iterations, maxIterations/iterations, i + j, 255);
+
+    double color = sqrt(iterations/maxIterations);
+    if(iterations == maxIterations){
+        color = 0;
+    }
+    SDL_SetRenderDrawColor(renderer, color, color, color, color);
     SDL_RenderDrawPoint(renderer, i, j);
 }
 
@@ -687,9 +704,10 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
                 choose_colorful_mandelbrot(renderer, i, j);
             case 3:
                 choose_heatmap_mandelbrot(renderer, i, j);
-            default:
-                choose_brightness_mandelbrot(renderer, i, j);
-                break;
+            // default:
+            //     choose_brightness_mandelbrot(renderer, i, j);
+            //     printf("which MAN: %d\n", 1);
+            //     break;
             }
             
         }//end for
