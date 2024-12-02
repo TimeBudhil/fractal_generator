@@ -387,6 +387,10 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+__global__ void get_iteration(double a, double b, int* iter) {
+
+}
+
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
  * @param renderer, pointer to the renderer of SDL which is where the pixel will be drawn (within the function)
@@ -664,6 +668,8 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     SDL_RenderDrawPoint(renderer, i, j);
 }
 
+__global__ void brightness_mandelbrot(int maxIterations, )
+
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
@@ -674,26 +680,29 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
 void create_mandelbrot(SDL_Renderer * renderer, int choice){
     double halfWidth = baseWidth*zoomScale/2.0;
     double halfHeight = baseHeight*zoomScale/2.0;
+
+        /**
+     * base height/width. The distance between is how zoomed in
+     * centerX is the overall shift left or right (between minsize and maxsize)
+     * centerY is the 
+     * 
+     * zoomScale is the distance between minsize and maxsize; greater the value, the greater the distance
+     * 
+     */
+    minimumReal = centerX - halfWidth; //distance to max = zoomin/out;
+    maximumReal = centerX + halfWidth; //distance to min = zoomin/out; 
+    minimumComplex = centerY + halfHeight; 
+    maximumComplex = centerY -  halfHeight;
+
+    dim3 threadsPerBlock(16, 16);
+    dim3 numBlocks(WINDOW_WIDTH/threadsPerBlock.x, WINDOW_HEIGHT/threadsPerBlock.y);
+
+    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(maxIterations, );
     
     for(int i = 0; i < WINDOW_WIDTH; i++) {
         for(int j = 0; j < WINDOW_HEIGHT; j++) {
             //the distance between minsize and maxsize = the zooming scale
             //if it's right centered or left centered around 0 = which part of mandelbrot
-
-            /**
-             * base height/width. The distance between is how zoomed in
-             * centerX is the overall shift left or right (between minsize and maxsize)
-             * centerY is the 
-             * 
-             * zoomScale is the distance between minsize and maxsize; greater the value, the greater the distance
-             * 
-             */
-            minimumReal = centerX - halfWidth; //distance to max = zoomin/out;
-            maximumReal = centerX + halfWidth; //distance to min = zoomin/out; 
-            minimumComplex = centerY + halfHeight; 
-            maximumComplex = centerY -  halfHeight;
-
-    
 
             //choose which version of the mandelbrot to use
             switch (choice)
