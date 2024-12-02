@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+/** consider these functions:
+ * https://discourse.libsdl.org/t/proposal-vector-graphics-api/27938
+ */
 
 
 //adjust window width and height to your wishes. 
@@ -32,6 +35,8 @@ double minimumReal;
 double maximumReal;
 double maximumComplex;
 double minimumComplex;
+double constantReal = 0;// real constant ("constant" in terms of the julia equation) portion of the julia set.
+double constantComplex = 0; //complex constant ("constant" in terms of the julia equation) portion of the julia set
 
 /**
  * Scalenumber–maps a current value index of a one-dimensional field onto a larger field.
@@ -111,7 +116,6 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j);
  */
 void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j);
 
-
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
  * @param renderer, pointer to the renderer of SDL which is where the pixel will be drawn (within the function)
@@ -150,6 +154,12 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j);
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
 void create_mandelbrot(SDL_Renderer * renderer, int which);
+
+/**
+ * choose_color
+ * chooses color based on the proportion of min and max
+ */
+SDL_Color hsbToRgb(float hue, float saturation, float brightness);
 
 /**Function heatmap takes a point and determines the points color based on its location 
  * @kevin please commment!, and add this not only to this header call but also to the actual function below
@@ -219,7 +229,6 @@ int main(int argc, char* argv[]) {
     /* MAIN loop the event handling and creation of the mandelbrot*/
     //initialize boolean while loop, for now we aren't quitting, so to false
     bool quit = false;
-
     while (!quit) {
 
         //handle events using the SDL event systems
@@ -259,22 +268,6 @@ int main(int argc, char* argv[]) {
                     centerY = scale_number(y, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
             
                     zoomScale *= 0.9;
-                    // mouseClickX = event.button.x;
-                    // mouseClickY = event.button.y;
-
-                    // // Calculate the shift based on click position relative to screen center
-                    // int screenCenterX = WINDOW_WIDTH / 2;
-                    // int screenCenterY = WINDOW_HEIGHT / 2;
-
-                    // // Calculate the shift in the complex plane
-                    // double shiftX = (mouseClickX - screenCenterX) * 
-                    //                 (baseWidth * zoomScale) / WINDOW_WIDTH;
-                    // double shiftY = (mouseClickY - screenCenterY) * 
-                    //                 (baseWidth * zoomScale) / WINDOW_HEIGHT;
-
-                    // // Move the center of the view
-                    // centerX -= shiftX;
-                    // centerY += shiftY;  // Note: SDL's Y-axis is inverted compared to mathematical coordinates
                 }//end if
 
                 /*Zooming in and Out*/
@@ -322,6 +315,8 @@ int main(int argc, char* argv[]) {
                     case SDLK_n: //n for negative
                         zoomScale *= -1;
                         break;
+
+                        /**Changing colors */
                     case SDLK_1: 
                         which = 1;
                         break;
@@ -529,10 +524,49 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j){
     if(iterations >= maxIterations){
         brightness = 0;
     }
-
-    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
     SDL_RenderDrawPoint(renderer, i, j);
 }//end choose_heat_map_mandelbrot
+
+
+
+/**
+ * convert hsbtorbg
+ */
+SDL_Color hsbToRgb(float hue, float saturation, float brightness){
+    SDL_Color rgb;
+    float c, x, m;
+    int h_i;
+
+    // Normalize hsb values
+    hue = fmod(hue, 360.0f);
+    saturation = fmax(0.0f, fmin(saturation, 1.0f));
+    brightness = fmax(0.0f, fmin(brightness, 1.0f));
+
+    c = brightness * saturation;
+    x = c * (1.0f - fabs(fmod(hue / 60.0f, 2.0f) - 1.0f));
+    m = brightness - c;
+
+    h_i = (int)(hue / 60.0f);
+
+    switch (h_i) {
+        case 0:
+            rgb.r = c + m; rgb.g = x + m; rgb.b = m; break;
+        case 1:
+            rgb.r = x + m; rgb.g = c + m; rgb.b = m; break;
+        case 2:
+            rgb.r = m; rgb.g = c + m; rgb.b = x + m; break;
+        case 3:
+            rgb.r = m; rgb.g = x + m; rgb.b = c + m; break;
+        case 4:
+            rgb.r = x + m; rgb.g = m; rgb.b = c + m; break;
+        case 5:
+            rgb.r = c + m; rgb.g = m; rgb.b = x + m; break;
+        default:
+            rgb.r = 0; rgb.g = 0; rgb.b = 0; break;
+    }
+
+    return rgb;
+}
 
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
@@ -562,15 +596,11 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j){
  * This version of the function is colored
  */
 void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
-
-    //map x and y (a and b) from the window width/heigh (0 to width or height) to 
-    // minimum size and maximum size
-    double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal);
-    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
-
+    double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal); //real
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
 
     int iterations = 0; 
-    int isInfinite = 16;
+    int isInfinite = 25;// this is a variable I haven't experienced with much. 
     double ca = a; // constant
     double cb = b; //constant
 
@@ -595,28 +625,31 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     }//end while
 
     //mapping function
-    //where does this mask details?
-    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 100);
-    int brightness = scale_number(sqrt(scaled), 0, 100, 0, 255);
+    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
+
+    /**
+     * Parameters to mess with:
+     * iterations/maxiterations
+     * ca (constant portion)
+     * cb (constant portion)
+     */
+    int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
+
+    
 
     //if in mandelbrot make color black. 
     if(iterations >= maxIterations){
         brightness = 0;
     }
-
-    /* Uint8 r, Uint8 g, Uint8 b, */
-    // int r, b, g;
-    /* i, j, minsize, maxsize, */
-    /* scale_number, */
-
-    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    
+    SDL_SetRenderDrawColor(renderer, iterations, maxIterations/iterations, i + j, 255);
     SDL_RenderDrawPoint(renderer, i, j);
 }
 
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
- * @param which – decides which fractal we will use
+ * @param choice – decides which fractal we will use
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
@@ -651,6 +684,8 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
                 choose_brightness_mandelbrot(renderer, i, j);
                 break;
             case 2:
+                choose_colorful_mandelbrot(renderer, i, j);
+            case 3:
                 choose_heatmap_mandelbrot(renderer, i, j);
             default:
                 choose_brightness_mandelbrot(renderer, i, j);
