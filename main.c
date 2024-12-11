@@ -530,17 +530,15 @@ void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j){
 
     // Choose white color
     SDL_SetRenderDrawColor(renderer, red, green, blue, 255);
-    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
-    int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
+    //double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
+    //int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
-    //if in mandelbrot make color black. 
-    if(iterations >= maxIterations){
-        brightness = 0;
-    }
-    SDL_RenderDrawPoint(renderer, i, j);
+    // //if in mandelbrot make color black. 
+    // if(iterations >= maxIterations){
+    //     brightness = 0;
+    // }
+    // SDL_RenderDrawPoint(renderer, i, j);
 }//end choose_heat_map_mandelbrot
-
-
 
 /**
  * convert hsbtorbg
@@ -613,7 +611,7 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
 
     int iterations = 0; 
-    // this is a variable I haven't experienced with much. 
+    int isInfinite = 25;
     double ca = a; // constant
     double cb = b; //constant
     double check_bounds;
@@ -639,30 +637,29 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     }//end while
 
     //mapping function
-    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
 
     /**
-     * Parameters to mess with:
-     * iterations/maxiterations
-     * ca (constant portion)
-     * cb (constant portion)
+     * bounds, infinite = if our bounds are 
+     * iterations max iterations = if the iterations hits max iterations, we exit early 
      */
-    int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
+    SDL_Color myColor;
+    double scaled_bounds = scale_number((double)check_bounds, 0, isInfinite, 0, 1);
+    double scaled_it = scale_number((double)iterations, 0, maxIterations, 0, 1);
+    myColor.b = scale_number(scaled_it,0, 1, 0, 255);
+    int brightness = scale_number(sqrt(scaled_bounds), 0, 1, 0, 255);
+
+    if(check_bounds < isInfinite){
+        myColor.r = 0;
+        myColor.b = 0;
+        myColor.g = 0;
+    }
     
 
-    //if in mandelbrot make color black. 
-    if(iterations >= maxIterations){
-        brightness = 0;
-    }
-
-    double color = sqrt(iterations/maxIterations);
-    if(iterations == maxIterations){
-        color = 0;
-    }
-    SDL_SetRenderDrawColor(renderer, color, color, color, color);
+    SDL_SetRenderDrawColor(renderer, myColor.r, myColor.b, myColor.g, brightness);
     SDL_RenderDrawPoint(renderer, i, j);
 }
+
 
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
@@ -674,6 +671,11 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
 void create_mandelbrot(SDL_Renderer * renderer, int choice){
     double halfWidth = baseWidth*zoomScale/2.0;
     double halfHeight = baseHeight*zoomScale/2.0;
+    
+    minimumReal = centerX - halfWidth; //distance to max = zoomin/out;
+    maximumReal = centerX + halfWidth; //distance to min = zoomin/out; 
+    minimumComplex = centerY + halfHeight; 
+    maximumComplex = centerY -  halfHeight;
     
     for(int i = 0; i < WINDOW_WIDTH; i++) {
         for(int j = 0; j < WINDOW_HEIGHT; j++) {
@@ -688,10 +690,6 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
              * zoomScale is the distance between minsize and maxsize; greater the value, the greater the distance
              * 
              */
-            minimumReal = centerX - halfWidth; //distance to max = zoomin/out;
-            maximumReal = centerX + halfWidth; //distance to min = zoomin/out; 
-            minimumComplex = centerY + halfHeight; 
-            maximumComplex = centerY -  halfHeight;
 
     
 
