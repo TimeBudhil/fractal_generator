@@ -18,11 +18,14 @@
 #define WINDOW_WIDTH 400
 #define WINDOW_HEIGHT 300
 
+// Number of threads per block, should be a multiple of 32
+#define THREADSPERBLOCK 128
+
 
 // the number of iterations to be run per individual pixel
 //if you zoom in increase the cap of these iterations
 // zoomed in coordinate conversion just another coordinate conversion
-int maxIterations = 100;  // the higher this value is the, more "concrete" the fractal will look
+const int maxIterations = 100;  // the higher this value is the, more "concrete" the fractal will look
 
 // Initialize the variables to click the screen to move and zoom in or out.
 int mouseClickX = -1;
@@ -91,7 +94,7 @@ int max(int a, int b);
  * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
  * This version of the function is only black and white
  */
-void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j);
+void place_bright_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j);
 
 
 /**
@@ -151,7 +154,7 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j);
  * This version of the function is based on the heatmap function–@KEVIN INSERT SOURCE HERE
  * that bases the color on the function heatmap..
  */
-void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j);
+void place_heatmap_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j);
 
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
@@ -418,7 +421,7 @@ __global__ void get_iteration(double a, double b, int* iter) {
  * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
  * This version of the function is only black and white
  */
-void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j){
+void place_bright_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j){
     double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal); //real
     double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
 
@@ -488,7 +491,7 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j){
  * This version of the function is based on the heatmap function–@KEVIN INSERT SOURCE HERE
  * that bases the color on the function heatmap..
  */
-void choose_heatmap_mandelbrot(SDL_Renderer * renderer, int i, int j){
+void place_heatmap_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j){
     double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal);
     double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
 
@@ -668,7 +671,71 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
     SDL_RenderDrawPoint(renderer, i, j);
 }
 
-__global__ void brightness_mandelbrot(int maxIterations, )
+__device__ double scale_number_device(double cv, double min, double max, double nmin, double nmax){
+    double range1 = max - min;
+    double range2 = nmax - nmin;
+
+    double new_number = ((cv * range2)/range1) + (nmin);
+    return new_number;
+}
+
+__global__ void brightness_mandelbrot(int windowHeight, int windowWidth, double baseWidth, double baseHeight, double centerX, double centerY, double zoomScale, int maxiter, int isInfinity, double* pixel_double) {
+    // get index of the thread
+    size_t index = blockIdx.x*blockDim.x + threadIdx.x;
+
+    // convert index to i (col) and j (row)
+    // index = j * width + i
+    int j = index / windowWidth;
+    int i = index - j * index;
+
+    // get the complex number at (i, j)
+    double halfWidth = baseWidth*zoomScale/2.0;
+    double halfHeight = baseHeight*zoomScale/2.0;
+    /**
+     * base height/width. The distance between is how zoomed in
+     * centerX is the overall shift left or right (between minsize and maxsize)
+     * centerY is the overall shift up or down
+     * zoomScale is the distance between minsize and maxsize; greater the value, the greater the distance
+     */
+    double minimumReal = centerX - halfWidth;
+    double maximumReal = centerX + halfWidth;
+    double minimumComplex = centerY + halfHeight; 
+    double maximumComplex = centerY -  halfHeight;
+
+    double a = scale_number_device((double)i, 0, windowWidth, minimumReal, maximumReal); //real
+    double b = scale_number_device((double)j, 0, windowHeight, minimumComplex, maximumComplex); //complex
+
+    // C = Z_0
+    double ca = a; // constant
+    double cb = b; //constant
+
+    // other variables
+    int iterations = 0; 
+    double check_bounds;
+
+    // while loop to check if the pixel at index is infinite or not
+    while (iterations < maxIterations){
+        double aa = a * a - b * b;
+        double bb = 2 * a * b;
+
+        a = aa + ca;
+        b = bb + cb;
+
+        check_bounds = a + b;
+        //convert to absolute
+        if(check_bounds < 0){
+            check_bounds *= -1;
+        }
+
+        if(check_bounds > isInfinite){
+            break;
+        }
+        iterations++;
+    }//end while
+
+    // save the double to pixel_double
+    pixel_double[index] = ((double) iterations)/maxiterations;
+}
 
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
@@ -694,10 +761,26 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     minimumComplex = centerY + halfHeight; 
     maximumComplex = centerY -  halfHeight;
 
-    dim3 threadsPerBlock(16, 16);
-    dim3 numBlocks(WINDOW_WIDTH/threadsPerBlock.x, WINDOW_HEIGHT/threadsPerBlock.y);
+    // A 1-D arrray of pixels of values 0~1 where pixel ij is j * WINDOW_WIDTH + i
+    double* cpu_pixel_double = (double*)malloc(sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH);
+    double* gpu_pixel_double;
+    if(cudaMalloc(&gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH) != cudaSuccess) {
+        fprintf(stderr, "Failed to allocate pixel_double array on GPU\n");
+        exit(2);
+    }
 
-    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(maxIterations, );
+    // we don't need to copy values to gpu because there is no value to be copied
+    // gpu will compute the double values and we will pass it back to cpu_pixel_double afterwards. 
+
+
+    dim3 threadsPerBlock(THREADSPERBLOCK);
+    dim3 numBlocks((WINDOW_HEIGHT*WINDOW_WIDTH + THREADSPERBLOCK - 1)/THREADSPERBLOCK);
+
+
+    // call the global function to determine which 
+    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxiterations, isInfinity, gpu_pixel_double);
+
+    // transfer gpu_pixel_double to cpu_pixel_double, then plot
     
     for(int i = 0; i < WINDOW_WIDTH; i++) {
         for(int j = 0; j < WINDOW_HEIGHT; j++) {
@@ -712,6 +795,7 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
                 break;
             case 2:
                 choose_colorful_mandelbrot(renderer, i, j);
+                break;
             case 3:
                 choose_heatmap_mandelbrot(renderer, i, j);
             // default:
