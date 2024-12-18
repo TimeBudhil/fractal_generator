@@ -49,6 +49,11 @@ double constantA = 0.0;  // Julia set real constant
 double constantB = 0.0;  // Julia set imaginary constant
 double isInfinite = 25;
 
+// Add these global variables near the top with the other globals
+double juliaAnimationSpeed = 0.01;  // Controls how fast the constants change
+bool autoAnimate = false;  // Toggle for auto-animation
+double animationTime = 0.0;  // Tracks time for smooth animation
+
 /**
  * Scalenumber–maps a current value index of a one-dimensional field onto a larger field.
  * eg: 9.5 on a 0-10 scale would be 95 on a 0-100 scale; the inputs would be scale_number(9.5, 0, 10, 0, 100);
@@ -373,6 +378,18 @@ int main(int argc, char* argv[]) {
                         zoomScale = 1.0;
                         maxIterations = 100;
                         break;
+                    case SDLK_SPACE:  // Space bar to toggle animation
+                        autoAnimate = !autoAnimate;
+                        printf("Animation %s\n", autoAnimate ? "started" : "stopped");
+                        break;
+                    case SDLK_m:  // 'M' key to modify animation speed
+                        juliaAnimationSpeed *= 1.5;
+                        printf("Animation speed: %.4f\n", juliaAnimationSpeed);
+                        break;
+                    case SDLK_n:  // 'N' key to decrease animation speed
+                        juliaAnimationSpeed /= 1.5;
+                        printf("Animation speed: %.4f\n", juliaAnimationSpeed);
+                        break;
                 }
 
                 /**Scrolling based on teh scale */
@@ -399,6 +416,19 @@ int main(int argc, char* argv[]) {
         // Clear screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+
+        // Add this before the create_mandelbrot call in the main loop:
+        if (autoAnimate && which >= 2) {  // Only animate for Julia sets
+            // Create smooth circular motion
+            animationTime += juliaAnimationSpeed;
+            constantA = 0.7885 * cos(animationTime);
+            constantB = 0.7885 * sin(animationTime);
+            
+            // Optional: Print current values periodically
+            if (fmod(animationTime, 0.5) < juliaAnimationSpeed) {
+                printf("Julia constants: %.4f, %.4f\n", constantA, constantB);
+            }
+        }
 
         // Modify create_mandelbrot to use new zoom parameters
         create_mandelbrot(renderer, which);
