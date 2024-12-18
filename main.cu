@@ -690,14 +690,17 @@ __global__ void brightness_mandelbrot(
     int maxIter, 
     int isInfinite, 
     double* pixel_double) {
-    // get index of the thread
-    size_t index = blockIdx.x*blockDim.x + threadIdx.x;
 
-    // convert index to i (col) and j (row)
-    // index = j * width + i
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    
     int j = index / windowWidth;
-    int i = index - j * index;
-
+    int i = index % windowWidth;
+    
+    // Check if this thread is within bounds
+    if (i >= windowWidth || j >= windowHeight) {
+        return;
+    }
+    
     // get the complex number at (i, j)
     double halfWidth = baseWidth*zoomScale/2.0;
     double halfHeight = baseHeight*zoomScale/2.0;
@@ -783,8 +786,12 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     // gpu will compute the double values and we will pass it back to cpu_pixel_double afterwards. 
 
 
+    // Calculate total number of pixels
+    int totalPixels = WINDOW_HEIGHT * WINDOW_WIDTH;
+    
+    // Calculate grid dimensions to ensure we cover all pixels
     dim3 threadsPerBlock(THREADSPERBLOCK);
-    dim3 numBlocks((WINDOW_HEIGHT*WINDOW_WIDTH + THREADSPERBLOCK - 1)/THREADSPERBLOCK);
+    dim3 numBlocks((totalPixels + THREADSPERBLOCK - 1) / THREADSPERBLOCK);
 
 
     // call the global function to determine what brightness each pixel should be
