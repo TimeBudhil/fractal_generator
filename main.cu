@@ -20,7 +20,7 @@
 #define WINDOW_HEIGHT 1080
 
 // Number of threads per block, should be a multiple of 32
-#define THREADSPERBLOCK 128
+#define THREADSPERBLOCK 256
 
 
 // the number of iterations to be run per individual pixel
@@ -318,10 +318,10 @@ int main(int argc, char* argv[]) {
                         zoomScale /= 0.9;
                         break;
                     case SDLK_i:
-                        maxIterations++;
+                        maxIterations *= 1.01;
                         break;
                     case SDLK_o:
-                        maxIterations--;
+                        maxIterations /= 1.01;
                         break;
                     case SDLK_n: //n for negative
                         zoomScale *= -1;
@@ -819,7 +819,7 @@ void create_mandelbrot(SDL_Renderer* renderer, int choice) {
     dim3 numBlocks((totalPixels + THREADSPERBLOCK - 1) / THREADSPERBLOCK);
 
 
-    // call the global function to determine what brightness each pixel should be
+    // call the global function to determine what brightness each pixel should be in terms of a double between 0 and 1
     brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxIterations, isInfinite, gpu_pixel_double);
 
     // transfer gpu_pixel_double to cpu_pixel_double
@@ -827,11 +827,11 @@ void create_mandelbrot(SDL_Renderer* renderer, int choice) {
 
     // After getting cpu_pixel_double from CUDA:
     
-    // Create pixel buffer
+    // Create pixel buffer for SDL texture
     Uint32* pixels = (Uint32*)malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(Uint32));
     
     // Create threads
-    const int num_threads = 4;  
+    const int num_threads = 20;  
     pthread_t threads[num_threads];
     ThreadData thread_data[num_threads];
     
