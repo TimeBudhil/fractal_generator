@@ -4,7 +4,7 @@
 
 # Compiler settings
 CC = nvcc
-CFLAGS = -g -Wall
+CFLAGS = -g
 SDL_INC = $(shell sdl2-config --cflags)
 SDL_LIB = $(shell sdl2-config --libs)
 

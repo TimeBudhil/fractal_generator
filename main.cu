@@ -25,7 +25,7 @@
 // the number of iterations to be run per individual pixel
 //if you zoom in increase the cap of these iterations
 // zoomed in coordinate conversion just another coordinate conversion
-const int maxIterations = 100;  // the higher this value is the, more "concrete" the fractal will look
+int maxIterations = 100;  // the higher this value is the, more "concrete" the fractal will look
 
 // Initialize the variables to click the screen to move and zoom in or out.
 int mouseClickX = -1;
@@ -831,9 +831,9 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
  * @param a the first integer input
  * @param b second integer input
  */
-int max(int a, int b){
-    return a > b ? a : b;
-} 
+// int max(int a, int b){
+//     return a > b ? a : b;
+// } 
 
 // This function takes a value and maps it to a color on a heatmap according
 void heatmap(float minimum, float maximum, float val, int* r, int* g, int* b) {
