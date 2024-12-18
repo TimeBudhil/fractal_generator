@@ -688,7 +688,7 @@ __global__ void brightness_mandelbrot(
     double centerY, 
     double zoomScale, 
     int maxIter, 
-    int isInfinity, 
+    int isInfinite, 
     double* pixel_double) {
     // get index of the thread
     size_t index = blockIdx.x*blockDim.x + threadIdx.x;
@@ -788,7 +788,7 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
 
 
     // call the global function to determine what brightness each pixel should be
-    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxIterations, isInfinity, gpu_pixel_double);
+    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxIterations, isInfinite, gpu_pixel_double);
 
     // transfer gpu_pixel_double to cpu_pixel_double
     cudaMemcpy(cpu_pixel_double, gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH, cudaMemcpyDeviceToHost);
@@ -848,8 +848,8 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
 // This function takes a value and maps it to a color on a heatmap according
 void heatmap(float minimum, float maximum, float val, int* r, int* g, int* b) {
     float ratio = 2 * (val - minimum) / (maximum - minimum);
-    *b = max(0, (int) 255*(1 - ratio));
-    *r = max(0, (int) 255*(ratio - 1));
+    *b = max(0.0, (int) 255*(1 - ratio));
+    *r = max(0.0, (int) 255*(ratio - 1));
     *g = 255 - *b - *r;
 }
 
