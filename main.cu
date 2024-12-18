@@ -780,32 +780,48 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     // call the global function to determine which 
     brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxiterations, isInfinity, gpu_pixel_double);
 
-    // transfer gpu_pixel_double to cpu_pixel_double, then plot
-    
+    // transfer gpu_pixel_double to cpu_pixel_double
+    cudaMemcpy(cpu_pixel_double, gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH, cudaMemcpyDeviceToHost);
+
+    // Draw the mandelbrot with the cpu_pixel_double using the SDL renderer
     for(int i = 0; i < WINDOW_WIDTH; i++) {
         for(int j = 0; j < WINDOW_HEIGHT; j++) {
-            //the distance between minsize and maxsize = the zooming scale
-            //if it's right centered or left centered around 0 = which part of mandelbrot
+            double brightness = (int)(cpu_pixel_double[j * WINDOW_WIDTH + i] * 255);
+            SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+            SDL_RenderDrawPoint(renderer, i, j);
+        }
+    }
 
-            //choose which version of the mandelbrot to use
-            switch (choice)
-            {
-            case 1:
-                choose_brightness_mandelbrot(renderer, i, j);
-                break;
-            case 2:
-                choose_colorful_mandelbrot(renderer, i, j);
-                break;
-            case 3:
-                choose_heatmap_mandelbrot(renderer, i, j);
-            // default:
-            //     choose_brightness_mandelbrot(renderer, i, j);
-            //     printf("which MAN: %d\n", 1);
-            //     break;
-            }
+    // free gpu_pixel_double
+    cudaFree(gpu_pixel_double);
+
+    // free cpu_pixel_double
+    free(cpu_pixel_double);
+    
+    // for(int i = 0; i < WINDOW_WIDTH; i++) {
+    //     for(int j = 0; j < WINDOW_HEIGHT; j++) {
+    //         //the distance between minsize and maxsize = the zooming scale
+    //         //if it's right centered or left centered around 0 = which part of mandelbrot
+
+    //         //choose which version of the mandelbrot to use
+    //         switch (choice)
+    //         {
+    //         case 1:
+    //             choose_brightness_mandelbrot(renderer, i, j);
+    //             break;
+    //         case 2:
+    //             choose_colorful_mandelbrot(renderer, i, j);
+    //             break;
+    //         case 3:
+    //             choose_heatmap_mandelbrot(renderer, i, j);
+    //         // default:
+    //         //     choose_brightness_mandelbrot(renderer, i, j);
+    //         //     printf("which MAN: %d\n", 1);
+    //         //     break;
+    //         }
             
-        }//end for
-    }//end for
+    //     }//end for
+    // }//end for
 
 }//end create_Mandelbrot
 

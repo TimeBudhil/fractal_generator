@@ -3,8 +3,8 @@
 # make run
 
 # Compiler settings
-CC = clang
-CFLAGS = -Wall -Wextra -g
+CC = nvcc
+CFLAGS = -g -Wall
 SDL_INC = $(shell sdl2-config --cflags)
 SDL_LIB = $(shell sdl2-config --libs)
 
@@ -15,8 +15,8 @@ BIN_DIR = bin
 
 # Files
 EXECUTABLE = $(BIN_DIR)/main
-SOURCES = $(SRC_DIR)/main.c
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+SOURCES = $(SRC_DIR)/main.cu
+OBJECTS = $(SOURCES:$(SRC_DIR)/%.cu=$(BUILD_DIR)/%.o)
 
 # Make sure the directories exist
 $(shell mkdir -p $(BUILD_DIR) $(BIN_DIR))
@@ -29,7 +29,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(OBJECTS) $(SDL_LIB) -o $@ -lm
 
 # Compile source files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cu
 	$(CC) $(CFLAGS) $(SDL_INC) -c $< -o $@
 
 # Clean build files
