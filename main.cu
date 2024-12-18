@@ -49,7 +49,6 @@ double constantA = 0.0;  // Julia set real constant
 double constantB = 0.0;  // Julia set imaginary constant
 double isInfinite = 25;
 
-// Add these global variables near the top with the other globals
 double juliaAnimationSpeed = 0.01;  // Controls how fast the constants change
 bool autoAnimate = false;  // Toggle for auto-animation
 double animationTime = 0.0;  // Tracks time for smooth animation
@@ -327,9 +326,6 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_o:
                         maxIterations /= 1.01;
-                        break;
-                    case SDLK_n: //n for negative
-                        zoomScale *= -1;
                         break;
                     case SDLK_g:
                         isInfinite++;
