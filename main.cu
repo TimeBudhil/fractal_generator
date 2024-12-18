@@ -679,7 +679,17 @@ __device__ double scale_number_device(double cv, double min, double max, double 
     return new_number;
 }
 
-__global__ void brightness_mandelbrot(int windowHeight, int windowWidth, double baseWidth, double baseHeight, double centerX, double centerY, double zoomScale, int maxiter, int isInfinity, double* pixel_double) {
+__global__ void brightness_mandelbrot(
+    int windowHeight, 
+    int windowWidth, 
+    double baseWidth, 
+    double baseHeight, 
+    double centerX, 
+    double centerY, 
+    double zoomScale, 
+    int maxIter, 
+    int isInfinity, 
+    double* pixel_double) {
     // get index of the thread
     size_t index = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -714,7 +724,7 @@ __global__ void brightness_mandelbrot(int windowHeight, int windowWidth, double 
     double check_bounds;
 
     // while loop to check if the pixel at index is infinite or not
-    while (iterations < maxIterations){
+    while (iterations < maxIter){
         double aa = a * a - b * b;
         double bb = 2 * a * b;
 
@@ -734,7 +744,7 @@ __global__ void brightness_mandelbrot(int windowHeight, int windowWidth, double 
     }//end while
 
     // save the double to pixel_double
-    pixel_double[index] = ((double) iterations)/maxiterations;
+    pixel_double[index] = ((double) iterations)/maxIter;
 }
 
 /**
@@ -777,8 +787,8 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     dim3 numBlocks((WINDOW_HEIGHT*WINDOW_WIDTH + THREADSPERBLOCK - 1)/THREADSPERBLOCK);
 
 
-    // call the global function to determine which 
-    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxiterations, isInfinity, gpu_pixel_double);
+    // call the global function to determine what brightness each pixel should be
+    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxIterations, isInfinity, gpu_pixel_double);
 
     // transfer gpu_pixel_double to cpu_pixel_double
     cudaMemcpy(cpu_pixel_double, gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH, cudaMemcpyDeviceToHost);
