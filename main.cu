@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include <pthread.h>
 
 /** consider these functions:
  * https://discourse.libsdl.org/t/proposal-vector-graphics-api/27938
@@ -15,8 +16,8 @@
 
 //adjust window width and height to your wishes. 
 //The smaller the window, the more easily the pages will load. 
-#define WINDOW_WIDTH 1080
-#define WINDOW_HEIGHT 1080
+#define WINDOW_WIDTH 400
+#define WINDOW_HEIGHT 300
 
 // Number of threads per block, should be a multiple of 32
 #define THREADSPERBLOCK 128
@@ -750,6 +751,29 @@ __global__ void brightness_mandelbrot(
     pixel_double[index] = ((double) iterations)/maxIter;
 }
 
+// Structure to pass data to threads
+typedef struct {
+    double* pixel_double;
+    Uint32* pixels;
+    int start_row;
+    int end_row;
+    int width;
+} ThreadData;
+
+// Thread function to process pixels
+void* process_pixels(void* arg) {
+    ThreadData* data = (ThreadData*)arg;
+    
+    for(int j = data->start_row; j < data->end_row; j++) {
+        for(int i = 0; i < data->width; i++) {
+            Uint8 brightness = (Uint8)(data->pixel_double[j * data->width + i] * 255);
+            data->pixels[j * data->width + i] = (brightness << 16) | (brightness << 8) | brightness | (0xFF << 24);
+        }
+    }
+    
+    return NULL;
+}
+
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
@@ -757,7 +781,7 @@ __global__ void brightness_mandelbrot(
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
-void create_mandelbrot(SDL_Renderer * renderer, int choice){
+void create_mandelbrot(SDL_Renderer* renderer, int choice) {
     double halfWidth = baseWidth*zoomScale/2.0;
     double halfHeight = baseHeight*zoomScale/2.0;
 
@@ -800,14 +824,50 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     // transfer gpu_pixel_double to cpu_pixel_double
     cudaMemcpy(cpu_pixel_double, gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH, cudaMemcpyDeviceToHost);
 
-    // Draw the mandelbrot with the cpu_pixel_double using the SDL renderer
-    for(int i = 0; i < WINDOW_WIDTH; i++) {
-        for(int j = 0; j < WINDOW_HEIGHT; j++) {
-            double brightness = (int)(cpu_pixel_double[j * WINDOW_WIDTH + i] * 255);
-            SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
-            SDL_RenderDrawPoint(renderer, i, j);
+    // After getting cpu_pixel_double from CUDA:
+    
+    // Create pixel buffer
+    Uint32* pixels = (Uint32*)malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(Uint32));
+    
+    // Create threads
+    const int num_threads = 4;  
+    pthread_t threads[num_threads];
+    ThreadData thread_data[num_threads];
+    
+    // Calculate rows per thread
+    int rows_per_thread = WINDOW_HEIGHT / num_threads;
+    
+    // Create and launch threads
+    for(int i = 0; i < num_threads; i++) {
+        thread_data[i].pixel_double = cpu_pixel_double;
+        thread_data[i].pixels = pixels;
+        thread_data[i].width = WINDOW_WIDTH;
+        thread_data[i].start_row = i * rows_per_thread;
+        thread_data[i].end_row = (i == num_threads - 1) ? WINDOW_HEIGHT : (i + 1) * rows_per_thread;
+        
+        if(pthread_create(&threads[i], NULL, process_pixels, &thread_data[i])) {
+            fprintf(stderr, "Error creating thread\n");
+            exit(1);
         }
     }
+    
+    // Wait for all threads to complete
+    for(int i = 0; i < num_threads; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    // Create and update texture
+    SDL_Texture* texture = SDL_CreateTexture(renderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        WINDOW_WIDTH, WINDOW_HEIGHT);
+    
+    SDL_UpdateTexture(texture, NULL, pixels, WINDOW_WIDTH * sizeof(Uint32));
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    
+    // Cleanup
+    SDL_DestroyTexture(texture);
+    free(pixels);
 
     // free gpu_pixel_double
     cudaFree(gpu_pixel_double);
