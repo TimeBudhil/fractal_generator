@@ -755,9 +755,9 @@ void choose_colorful_julia(SDL_Renderer * renderer,int i, int j){
     double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
     int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
 
-    //if in mandelbrot make color black. 
+    //if in mandelbrot make color white. 
     if(iterations == maxIterations){
-        brightness = 255;
+        brightness = 240;
     }
 
     SDL_SetRenderDrawColor(renderer, brightness, brightness, 255, 255);
