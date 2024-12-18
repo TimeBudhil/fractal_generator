@@ -160,7 +160,7 @@ void place_heatmap_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j);
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
- * @param which – decides which fractal we will use
+ * @param which ��� decides which fractal we will use
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
@@ -748,6 +748,68 @@ __global__ void brightness_mandelbrot(
     pixel_double[index] = ((double) iterations)/maxIter;
 }
 
+__global__ void brightness_julia(
+    int windowHeight, 
+    int windowWidth, 
+    double baseWidth, 
+    double baseHeight, 
+    double centerX, 
+    double centerY, 
+    double zoomScale,
+    double constantA,  // Julia set parameter
+    double constantB,  // Julia set parameter 
+    int maxIter, 
+    int isInfinite, 
+    double* pixel_double) {
+
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    int j = index / windowWidth;
+    int i = index % windowWidth;
+    
+    // Check if this thread is within bounds
+    if (i >= windowWidth || j >= windowHeight) {
+        return;
+    }
+    
+    // Calculate bounds
+    double halfWidth = baseWidth*zoomScale/2.0;
+    double halfHeight = baseHeight*zoomScale/2.0;
+    double minimumReal = centerX - halfWidth;
+    double maximumReal = centerX + halfWidth;
+    double minimumComplex = centerY + halfHeight; 
+    double maximumComplex = centerY - halfHeight;
+
+    // Get initial complex number coordinates
+    double a = scale_number_device((double)i, 0, windowWidth, minimumReal, maximumReal);
+    double b = scale_number_device((double)j, 0, windowHeight, minimumComplex, maximumComplex);
+
+    int iterations = 0;
+    double check_bounds;
+
+    // Julia set iteration
+    while (iterations < maxIter) {
+        double aa = a * a - b * b;
+        double bb = 2 * a * b;
+
+        // Key difference from Mandelbrot: we use constant values instead of original coordinates
+        a = aa + constantA;
+        b = bb + constantB;
+
+        check_bounds = a + b;
+        if (check_bounds < 0) {
+            check_bounds *= -1;
+        }
+
+        if (check_bounds > isInfinite) {
+            break;
+        }
+        iterations++;
+    }
+
+    pixel_double[index] = ((double)iterations) / maxIter;
+}
+
 // Structure to pass data to threads
 typedef struct {
     double* pixel_double;
@@ -818,9 +880,18 @@ void create_mandelbrot(SDL_Renderer* renderer, int choice) {
     dim3 threadsPerBlock(THREADSPERBLOCK);
     dim3 numBlocks((totalPixels + THREADSPERBLOCK - 1) / THREADSPERBLOCK);
 
-
-    // call the global function to determine what brightness each pixel should be in terms of a double between 0 and 1
-    brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, centerX, centerY, zoomScale, maxIterations, isInfinite, gpu_pixel_double);
+    // Choose which kernel to run based on choice
+    if (choice <= 3) {  // Mandelbrot variations
+        brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(
+            WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, 
+            centerX, centerY, zoomScale, maxIterations, isInfinite, 
+            gpu_pixel_double);
+    } else {  // Julia set
+        brightness_julia<<<numBlocks, threadsPerBlock>>>(
+            WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, 
+            centerX, centerY, zoomScale, constantReal, constantComplex,
+            maxIterations, isInfinite, gpu_pixel_double);
+    }
 
     // transfer gpu_pixel_double to cpu_pixel_double
     cudaMemcpy(cpu_pixel_double, gpu_pixel_double, sizeof(double) * WINDOW_HEIGHT * WINDOW_WIDTH, cudaMemcpyDeviceToHost);
