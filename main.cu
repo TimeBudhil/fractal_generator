@@ -16,8 +16,8 @@
 
 //adjust window width and height to your wishes. 
 //The smaller the window, the more easily the pages will load. 
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 300
+#define WINDOW_WIDTH 1080
+#define WINDOW_HEIGHT 1080
 
 // Number of threads per block, should be a multiple of 32
 #define THREADSPERBLOCK 128
@@ -391,9 +391,6 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-__global__ void get_iteration(double a, double b, int* iter) {
-
-}
 
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
@@ -767,7 +764,11 @@ void* process_pixels(void* arg) {
     for(int j = data->start_row; j < data->end_row; j++) {
         for(int i = 0; i < data->width; i++) {
             Uint8 brightness = (Uint8)(data->pixel_double[j * data->width + i] * 255);
-            data->pixels[j * data->width + i] = (brightness << 16) | (brightness << 8) | brightness | (0xFF << 24);
+            // save the RGBA pixel value for SDL rendering
+            data->pixels[j * data->width + i] = (brightness << 24) |  // Red
+                                                (brightness << 16) |  // Green
+                                                (brightness << 8) | // Blue 
+                                                (0xFF); // opacity
         }
     }
     
