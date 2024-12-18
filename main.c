@@ -15,8 +15,8 @@
 
 //adjust window width and height to your wishes. 
 //The smaller the window, the more easily the pages will load. 
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 300
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 
 
 // the number of iterations to be run per individual pixel
@@ -33,8 +33,8 @@ int mouseClickY = -1;
 double centerX = 0.0;  // how much right or left we go.  (multiply against zoomscale to be proportional) on complex plane
 double centerY = 0.0;  //how much up or down we go (multiply against zoomscale to be proportional) on complex plane
 double zoomScale = 1.0;  // Zoom scale factor
-double baseWidth = 4.0;  // Base width of the view in complex plane
-double baseHeight = 4.0;  // Base width of the view in complex plane
+double baseWidth = WINDOW_WIDTH / 100;  // Base width of the view in complex plane
+double baseHeight = WINDOW_HEIGHT / 100;  // Base width of the view in complex plane
 double keyboardSpeed = 0.1;  // Speed of scrolling
 int which = 1; //which set are we using?
 double minimumReal;
@@ -757,7 +757,7 @@ void choose_colorful_julia(SDL_Renderer * renderer,int i, int j){
 
     //if in mandelbrot make color white. 
     if(iterations == maxIterations){
-        brightness = 240;
+        brightness = 255;
     }
 
     SDL_SetRenderDrawColor(renderer, brightness, brightness, 255, 255);
