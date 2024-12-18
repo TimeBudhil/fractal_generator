@@ -22,5 +22,6 @@
             "intelliSenseMode": "macos-clang-arm64"
         }
     ],
-    "version": 4
+    "version": 4,
+    "C_Cpp.errorSquiggles": "disabled"
 }

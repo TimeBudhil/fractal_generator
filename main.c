@@ -41,8 +41,8 @@ double minimumReal;
 double maximumReal;
 double maximumComplex;
 double minimumComplex;
-double constantReal = 0;// real constant ("constant" in terms of the julia equation) portion of the julia set.
-double constantComplex = 0; //complex constant ("constant" in terms of the julia equation) portion of the julia set
+double constantA = 0;// real constant ("constant" in terms of the julia equation) portion of the julia set.
+double constantB = 0; //complex constant ("constant" in terms of the julia equation) portion of the julia set
 double isInfinite = 25;
 
 /**
@@ -122,6 +122,33 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j);
  * This version of the function is colored
  */
 void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j);
+
+/**
+ * For one pixel, choose the brightness of that pixel based on the julia set's formula
+ * @param renderer, pointer to the renderer of SDL which is where the pixel will be drawn (within the function)
+ * @param i, the x coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * @param j, the y coordinate of the pixel (within the resolution of the window–WINDOW_WIDTH and WINDOW_HEIGHT)
+ * 
+ * Quick explanation of scaling: The wider apart @param minsize and @param maxsize are, the more zoomed out
+ * the image will be. If minsize + maxsize = 0, the image will be centered. If it's negative, the image will
+ * be shifted right, and if positive, shifted left. 
+ * 
+ * Note: this is ONE pixel in one image of the mandelbrot–i.e. this function will be called WINDOW_WIDTH * WINDOW_HEIGHT
+ * times.
+ * 
+ * This function draws the pixels according to the mandelbrot formula: z^2 + c;
+ * The product of z^2 + c is applied into z, so the next iteration of z^2 + c = (z^2 + c)^2 + c
+ * This is on the complex plane, so the values iterate and sometimes reach infinity, and sometimes don't. 
+ * That is what the  MAX_ITERATIONS macro means–how many times we iterate this fomrula until it's too much. 
+ * Technically, this can go on infinitely. But we cap it at 50, other tutorials cap this at 16 (the coding challenge)
+ * Depending on the value and graphing this on the complex plane, coloring the values that result in a cycling towards infinity one color,
+ * and coloring the other pixels white, we get the mandelbrot set fractal. The Julia set has a very similar iterative process, which
+ * can have values that can be adjusted. 
+ * 
+ * This can be easily parallelized. For each zoom in, a new mandelbrot image is generated. 
+ * This version of the function is colored
+ */
+void choose_colorful_julia(SDL_Renderer * renderer, int i, int j);
 
 /**
  * For one pixel, choose the brightness of that pixel based on the mandelbrot set's formula
@@ -328,9 +355,29 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_g:
                         isInfinite++;
+                        break;
                     case SDLK_h:
                         isInfinite--;
-                        /**Changing colors */
+                        break;
+                        /*Adjust parameters on julia set*/
+                    case SDLK_j:
+                        constantA += 0.01;
+                        break;
+                    case SDLK_k:
+                        constantA -= 0.01;
+                        break;
+                    case SDLK_s:
+                        constantB += 0.01;
+                        break;
+                    case SDLK_d:
+                        constantB -= 0.01;
+                        break;
+
+                    /* F for preset julia set*/
+                    case SDLK_f:
+                        constantA = -0.835;
+                        constantB = -0.2321;
+                        break;
                     case SDLK_1: 
                         which = 1;
                         printf("which: %d\n", which);
@@ -341,6 +388,10 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_3: 
                         which = 3;
+                        printf("which: %d\n", which);
+                        break;
+                    case SDLK_4: 
+                        which = 4;
                         printf("which: %d\n", which);
                         break;
                     //case SDLK_s: 
@@ -457,9 +508,12 @@ void choose_brightness_mandelbrot(SDL_Renderer * renderer, int i, int j){
     //if in mandelbrot make color black. 
     if(iterations >= maxIterations){
         brightness = 0;
+        SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    } else{
+        SDL_SetRenderDrawColor(renderer, 255 - brightness, 255 - brightness, 255 - brightness, 255);
     }
 
-    SDL_SetRenderDrawColor(renderer, brightness, brightness, brightness, 255);
+    
     SDL_RenderDrawPoint(renderer, i, j);
 }
 
@@ -668,6 +722,48 @@ void choose_colorful_mandelbrot(SDL_Renderer * renderer, int i, int j){
 }
 
 
+void choose_colorful_julia(SDL_Renderer * renderer,int i, int j){
+     double a = scale_number((double)i, 0, WINDOW_WIDTH, minimumReal, maximumReal); //real
+    double b = scale_number((double)j, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex); //complex
+
+    int iterations = 0; 
+    int isInfinite = 25;
+    double ca = a; // constant
+    double cb = b; //constant
+
+    //for each pixel, check if it's infinite or not
+    while (iterations < maxIterations){
+        double aa = a * a - b * b;
+        double bb = 2 * a * b;
+
+        a = aa + constantA;
+        b = bb + constantB;
+
+        double check_bounds = a + b;
+        //convert to absolute
+        if(check_bounds < 0){
+            check_bounds *= -1;
+        }
+
+        if(check_bounds > isInfinite){
+            break;
+        }
+        iterations++;
+    }//end while
+
+    //mapping function
+    double scaled = scale_number((double)iterations, 0, maxIterations, 0, 1);
+    int brightness = scale_number(sqrt(scaled), 0, 1, 0, 255);
+
+    //if in mandelbrot make color black. 
+    if(iterations == maxIterations){
+        brightness = 255;
+    }
+
+    SDL_SetRenderDrawColor(renderer, brightness, brightness, 255, 255);
+    SDL_RenderDrawPoint(renderer, i, j);
+}
+
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
@@ -701,19 +797,20 @@ void create_mandelbrot(SDL_Renderer * renderer, int choice){
     
 
             //choose which version of the mandelbrot to use
-            switch (choice)
-            {
-            case 1:
-                choose_brightness_mandelbrot(renderer, i, j);
-                break;
-            case 2:
-                choose_colorful_mandelbrot(renderer, i, j);
-            case 3:
-                choose_heatmap_mandelbrot(renderer, i, j);
-            // default:
-            //     choose_brightness_mandelbrot(renderer, i, j);
-            //     printf("which MAN: %d\n", 1);
-            //     break;
+            switch (choice){
+                case 1:
+                    choose_brightness_mandelbrot(renderer, i, j);
+                    break;
+                case 2:
+                    choose_colorful_mandelbrot(renderer, i, j);
+                case 3:
+                    choose_heatmap_mandelbrot(renderer, i, j);
+                case 4: 
+                    choose_colorful_julia(renderer, i, j);
+                // default:
+                //     choose_brightness_mandelbrot(renderer, i, j);
+                //     printf("which MAN: %d\n", 1);
+                //     break;
             }
             
         }//end for
