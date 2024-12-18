@@ -827,10 +827,10 @@ void* process_pixels(void* arg) {
         for(int i = 0; i < data->width; i++) {
             Uint8 brightness = (Uint8)(data->pixel_double[j * data->width + i] * 255);
             // save the RGBA pixel value for SDL rendering
-            data->pixels[j * data->width + i] = (brightness << 24) |  // Red
-                                                (brightness << 16) |  // Green
-                                                (brightness << 8) | // Blue 
-                                                (0xFF); // opacity
+            data->pixels[j * data->width + i] = (brightness << 24) |  // Red byte
+                                                (brightness << 16) |  // Green byte
+                                                (brightness << 8) | // Blue byte
+                                                (0xFF); // opacity byte (always full opacity)
         }
     }
     
@@ -881,7 +881,7 @@ void create_mandelbrot(SDL_Renderer* renderer, int choice) {
     dim3 numBlocks((totalPixels + THREADSPERBLOCK - 1) / THREADSPERBLOCK);
 
     // Choose which kernel to run based on choice
-    if (choice <= 3) {  // Mandelbrot variations
+    if (choice == 1) {  // Mandelbrot variations
         brightness_mandelbrot<<<numBlocks, threadsPerBlock>>>(
             WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, 
             centerX, centerY, zoomScale, maxIterations, isInfinite, 
