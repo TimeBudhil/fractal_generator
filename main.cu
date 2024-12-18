@@ -45,8 +45,8 @@ double minimumReal;
 double maximumReal;
 double maximumComplex;
 double minimumComplex;
-double constantReal = 0;// real constant ("constant" in terms of the julia equation) portion of the julia set.
-double constantComplex = 0; //complex constant ("constant" in terms of the julia equation) portion of the julia set
+double constantA = 0.0;  // Julia set real constant
+double constantB = 0.0;  // Julia set imaginary constant
 double isInfinite = 25;
 
 /**
@@ -920,7 +920,7 @@ void create_mandelbrot(SDL_Renderer* renderer, int choice) {
     } else {  // Julia set
         brightness_julia<<<numBlocks, threadsPerBlock>>>(
             WINDOW_HEIGHT, WINDOW_WIDTH, baseWidth, baseHeight, 
-            centerX, centerY, zoomScale, constantReal, constantComplex,
+            centerX, centerY, zoomScale, constantA, constantB,
             maxIterations, isInfinite, gpu_pixel_double);
     }
 
