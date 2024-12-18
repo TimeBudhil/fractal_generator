@@ -160,7 +160,7 @@ void place_heatmap_mandelbrot_pixel(SDL_Renderer * renderer, int i, int j);
 /**
  * Iteratively calls @function choose_brightness_mandelbrot or @function choose_heatmap_mandelbrot based on
  * the choice 
- * @param which ��� decides which fractal we will use
+ * @param which  decides which fractal we will use
  * @param renderer – the renderer in SDL which is where the mandelbrot image will be drawn
  * @param scale – the scale parameter which is adjusted in MAIN based on the SDL scaling, will be updated as it is passed into this function
  */
@@ -330,7 +330,6 @@ int main(int argc, char* argv[]) {
                         isInfinite++;
                     case SDLK_h:
                         isInfinite--;
-                        /**Changing colors */
                     case SDLK_1: 
                         which = 1;
                         printf("which: %d\n", which);
@@ -348,6 +347,38 @@ int main(int argc, char* argv[]) {
                         centerX = 0.0;
                         centerY = 0.0;
                         zoomScale = 1.0;
+                        break;
+                    /*Adjust parameters on julia set*/
+                    case SDLK_j:
+                        constantA += 0.01;
+                        printf("Julia constant A: %.4f\n", constantA);  // Added feedback
+                        break;
+                    case SDLK_k:
+                        constantA -= 0.01;
+                        printf("Julia constant A: %.4f\n", constantA);  // Added feedback
+                        break;
+                    case SDLK_s:
+                        constantB += 0.01;
+                        printf("Julia constant B: %.4f\n", constantB);  // Added feedback
+                        break;
+                    case SDLK_d:
+                        constantB -= 0.01;
+                        printf("Julia constant B: %.4f\n", constantB);  // Added feedback
+                        break;
+
+                    /* F for preset julia set*/
+                    case SDLK_f:
+                        constantA = -0.835;
+                        constantB = -0.2321;
+                        printf("Julia preset: A=%.4f, B=%.4f\n", constantA, constantB);  // Added feedback
+                        break;
+                    case SDLK_r:
+                        // Reset to original view
+                        centerX = 0.0;
+                        centerY = 0.0;
+                        zoomScale = 1.0;
+                        constantA = 0.0;  // Added reset for Julia parameters
+                        constantB = 0.0;  // Added reset for Julia parameters
                         break;
                 }
 
