@@ -15,8 +15,8 @@
 
 //adjust window width and height to your wishes. 
 //The smaller the window, the more easily the pages will load. 
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 300
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 1000
 
 // Number of threads per block, should be a multiple of 32
 #define THREADSPERBLOCK 128
