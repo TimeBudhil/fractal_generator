@@ -342,12 +342,6 @@ int main(int argc, char* argv[]) {
                         which = 3;
                         printf("which: %d\n", which);
                         break;
-                    case SDLK_r:
-                        // Reset to original view
-                        centerX = 0.0;
-                        centerY = 0.0;
-                        zoomScale = 1.0;
-                        break;
                     /*Adjust parameters on julia set*/
                     case SDLK_j:
                         constantA += 0.01;
@@ -377,8 +371,7 @@ int main(int argc, char* argv[]) {
                         centerX = 0.0;
                         centerY = 0.0;
                         zoomScale = 1.0;
-                        constantA = 0.0;  // Added reset for Julia parameters
-                        constantB = 0.0;  // Added reset for Julia parameters
+                        maxIterations = 100;
                         break;
                 }
 
