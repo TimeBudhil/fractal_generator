@@ -80,4 +80,4 @@ To generate a fractal image, run the following command:
 ./fractal_generator [options]
 ```
 ### Specific Example
-After starting the program, zoom in to whatever looks cool and if you want to increase the detail or make it darker you press I but if you want it to be brighter and lose focus you press O. If you start seeing pixels, you have reached the limit of double precision and then scroll down to get away from the end.
+After starting the program, zoom in to whatever looks cool and if you want to increase the detail or make it darker you press I but if you want it to be brighter and lose focus you press O. If you start seeing pixels, you have reached the limit of double precision and then scroll down to zoom out.
