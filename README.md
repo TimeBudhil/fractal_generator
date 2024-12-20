@@ -39,7 +39,7 @@ On the surface, this is not that difficult because establishing a network across
 
 ### Next Steps
 
-networking
+The next steps and the full stance on networking will be inside the report file.
 
 ## Requirements
 
