@@ -31,7 +31,9 @@ After the GPU is done calculating the brightness needed for each pixel, each thr
 
 ### Networking (Goal)
 
-To make the generation even faster, our goal was to create a network so that we had access to other computers GPU's and CPU's to help generate the necessary brightness calculations and argb data before sending it back to the main computer to use the SDL library to generate the image.
+To make the generation even faster, our goal was to create a network so that we had access to other computers GPU's and CPU's to help generate the necessary brightness calculations and argb data before sending it back to the main computer to use the SDL library to generate the image. 
+
+On the surface, this is not that difficult because establishing a network across computers is feasible due to our prior experience on the topic in the class. However, trying to get threads to work in parallel across different computers would be a massive challenge due to the fact that our experience with networking is a little limited. We know it is possible get GPU's and CPU's to work in parallel, which would be required for threads, across different computers due to the fact that we see it in everyday life with things like crypto. However, the three of us have limited experience and we simply did not have enough time to experiment and with paralellization across different computers to pull this off, but if we had the extra time  or even just a little more experience, it could be be implemented easily.
 
 ### Next Steps
 
@@ -55,7 +57,7 @@ networking
 
 2. Compile the project:
     ```sh
-    make
+    make run
     ```
 
 ## Usage
