@@ -13,7 +13,6 @@ This project is a final assignment for CSC213, called "Fractal Generator". The p
 - [Installation](#installation)
 - [Usage](#usage)
   - [Instructions](#instructions)
-  - [Example](#example)
   - [Specific Example](#Specific)
 - [Contributing](#contributing)
 - [License](#license)
@@ -74,10 +73,5 @@ Left-click/Scroll up - Zoom in
 
 Scross down - Zoom out
 
-### Example
-To generate a fractal image, run the following command:
-```sh
-./fractal_generator [options]
-```
 ### Specific Example
 After starting the program, zoom in to whatever looks cool and if you want to increase the detail or make it darker you press I but if you want it to be brighter and lose focus you press O. If you start seeing pixels, you have reached the limit of double precision and then scroll down to zoom out.
