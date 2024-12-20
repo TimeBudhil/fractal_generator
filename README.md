@@ -65,9 +65,13 @@ The next steps and the full stance on networking will be inside the report file.
 ### Instructions
 
 Arrow Keys - Move the screen
+
 I key - increases iterations
+
 O key - decreases iterations
+
 Left-click/Scroll up - zoom in
+
 Scross down - zoom out
 
 ### Example
