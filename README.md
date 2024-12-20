@@ -45,10 +45,9 @@ The next steps and the full stance on networking will be inside the report file.
 
 - C Compiler (e.g., `gcc`)
 - Make
-- GPU with CUDA support (optional but recommended for better performance)
+- GPU with CUDA support
 - SDL Library
-- Networking capabilities for distributed computing
-
+  
 ## Installation
 
 1. Clone the repository:
