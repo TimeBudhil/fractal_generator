@@ -12,7 +12,8 @@ This project is a final assignment for CSC213, called "Fractal Generator". The p
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Example](#example)
+  - [Instructions](#instructions)
+  - [Specific Example](#Specific)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -37,16 +38,15 @@ On the surface, this is not that difficult because establishing a network across
 
 ### Next Steps
 
-networking
+The next steps and the full stance on networking will be inside the report file.
 
 ## Requirements
 
 - C Compiler (e.g., `gcc`)
 - Make
-- GPU with CUDA support (optional but recommended for better performance)
+- GPU with CUDA support
 - SDL Library
-- Networking capabilities for distributed computing
-
+  
 ## Installation
 
 1. Clone the repository:
@@ -61,7 +61,17 @@ networking
     ```
 
 ## Usage
+### Instructions
 
-To generate a fractal image, run the following command:
-```sh
-./fractal_generator [options]
+Arrow Keys - Move the screen
+
+I key - Increases iterations
+
+O key - Decreases iterations
+
+Left-click/Scroll up - Zoom in
+
+Scross down - Zoom out
+
+### Specific Example
+After starting the program, zoom in to whatever looks cool and if you want to increase the detail or make it darker you press I but if you want it to be brighter and lose focus you press O. If you start seeing pixels, you have reached the limit of double precision and then scroll down to zoom out.
