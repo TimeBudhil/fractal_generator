@@ -5,8 +5,8 @@ This project is a final assignment for CSC213, titled "Fractal Generator". The p
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Implementation Details](#implementation-details)
-  - [GPU Programming With Thread](#gpu-programming with threads)
-  - [Paralellization With Threads](#Paralellization with threads)
+  - [GPU Programming With Thread](#gpu-programming)
+  - [Paralellization With Threads](#Paralellization)
   - [Networking](#networking)
   - [Next Steps](#next-steps)
 - [Requirements](#requirements)
