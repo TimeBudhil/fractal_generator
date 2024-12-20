@@ -18,7 +18,7 @@ This project is a final assignment for CSC213, called "Fractal Generator". The p
 
 ## Project Overview
 
-This project generates fractal images by leveraging GPU capabilities for computation efficiency. It also includes management of the generated image files and supports networking to distribute tasks among multiple computers.
+The Fractal Generator creates fractal images by leveraging GPU, CPU, and eventually Networking capabilities for computation efficiency and speed to create as smooth of an experience as possible.
 
 ## Implementation Details
 
