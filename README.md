@@ -31,7 +31,7 @@ After the GPU is done calculating the brightness needed for each pixel, each thr
 
 ### Networking (Goal)
 
-The project supports networking to allow the distribution of fractal generation tasks across multiple computers. This helps in speeding up the overall process and managing larger fractal generation tasks effectively.
+To make the generation even faster, our goal was to create a network so that we had access to other computers GPU's and CPU's to help generate the necessary brightness calculations and argb data before sending it back to the main computer to use the SDL library to generate the image.
 
 ### Next Steps
 
