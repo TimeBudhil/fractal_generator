@@ -281,13 +281,33 @@ int main(int argc, char* argv[]) {
 
                 /**Scrolling based on teh scale */
             } else if (event.type == SDL_MOUSEWHEEL) {
-                // Zoom logic (same as before)
-                if (event.wheel.y > 0) { // Scroll up (zoom in)
-                    zoomScale *= 0.9;  // Zoom in by reducing scale
-                } else if (event.wheel.y < 0) { // Scroll down (zoom out)
-                    zoomScale /= 0.9;  // Zoom out by increasing scale
-                } 
+                // Get current mouse position
+                int x, y;
+                SDL_GetMouseState(&x, &y);
+
+                // Calculate the bounds of the current view
+                double halfWidth = baseWidth * zoomScale / 2.0;
+                double halfHeight = baseHeight * zoomScale / 2.0;
+                minimumReal = centerX - halfWidth;  
+                maximumReal = centerX + halfWidth;
+                minimumComplex = centerY + halfHeight;
+                maximumComplex = centerY - halfHeight;
+
+                // Convert mouse coordinates to complex plane coordinates
+                double mouseX = scale_number(x, 0, WINDOW_WIDTH, minimumReal, maximumReal);
+                double mouseY = scale_number(y, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
                 
+                // Calculate the offset from current center to mouse position
+                double dx = mouseX - centerX;
+                double dy = mouseY - centerY;
+
+                // Apply zoom based on scroll direction
+                double zoomFactor = (event.wheel.y > 0) ? 0.9 : 1.1;  // Zoom in for positive y, out for negative
+                zoomScale *= zoomFactor;
+                
+                // Adjust center position to keep mouse point invariant
+                centerX = mouseX - dx * zoomFactor;
+                centerY = mouseY - dy * zoomFactor;
             }
         }
 
