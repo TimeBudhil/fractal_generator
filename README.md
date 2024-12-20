@@ -66,13 +66,13 @@ The next steps and the full stance on networking will be inside the report file.
 
 Arrow Keys - Move the screen
 
-I key - increases iterations
+I key - Increases iterations
 
-O key - decreases iterations
+O key - Decreases iterations
 
-Left-click/Scroll up - zoom in
+Left-click/Scroll up - Zoom in
 
-Scross down - zoom out
+Scross down - Zoom out
 
 ### Example
 To generate a fractal image, run the following command:
