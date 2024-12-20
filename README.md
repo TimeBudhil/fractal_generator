@@ -1,12 +1,12 @@
 # Fractal Generator
 
-This project is a final assignment for CSC213, titled "Fractal Generator". The project involves generating fractals using GPU programming, managing image files, and networking among computers.
+This project is a final assignment for CSC213, called "Fractal Generator". The project involves generating fractals using GPU programming, CPU paralellization, and eventually networking among computers.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Implementation Details](#implementation-details)
   - [GPU Programming With Thread](#gpu-programming)
-  - [Paralellization With Threads](#Paralellization)
+  - [CPU With Threads](#CPU)
   - [Networking](#networking)
   - [Next Steps](#next-steps)
 - [Requirements](#requirements)
@@ -24,9 +24,10 @@ This project generates fractal images by leveraging GPU capabilities for computa
 
 ### GPU Programming With Threads
 
-The core of the fractal generation is implemented using GPU programming to take advantage of parallel processing capabilities. This ensures that fractal images are generated efficiently and quickly. The primary language used for this part is C.
+The core of the fractal generation is implemented using GPU programming to take advantage of parallel processing capabilities. With each individual pixel's brightness being calculated by a individual thread. Which ensures that the data are generated efficiently and quickly.
 
-### Parallelization With Threads
+### CPU With Threads
+After the GPU is done calculating the brightness needed for each pixel, each thread of the CPU takes a couple of the pixels information and converts that brightness into a argb to be used by SDL for generating the image.
 
 ### Networking (Goal)
 
@@ -41,6 +42,7 @@ networking
 - C Compiler (e.g., `gcc`)
 - Make
 - GPU with CUDA support (optional but recommended for better performance)
+- SDL Library
 - Networking capabilities for distributed computing
 
 ## Installation
