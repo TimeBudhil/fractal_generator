@@ -155,11 +155,29 @@ int main(int argc, char* argv[]) {
                     SDL_GetMouseState(&x, &y);
                     printf("Mouse clicked at (%d, %d)\n", x, y);
 
-                    // scale the mouse position to the fractal coordinate system
-                    centerX = scale_number(x, 0, WINDOW_HEIGHT, minimumReal, maximumReal);
-                    centerY = scale_number(y, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
-            
-                    zoomScale *= 0.9;
+                    // Calculate the bounds of the current view
+                    double halfWidth = baseWidth * zoomScale / 2.0;
+                    double halfHeight = baseHeight * zoomScale / 2.0;
+                    minimumReal = centerX - halfWidth;  
+                    maximumReal = centerX + halfWidth;
+                    minimumComplex = centerY + halfHeight;
+                    maximumComplex = centerY - halfHeight;
+
+                    // Convert mouse coordinates to complex plane coordinates
+                    double mouseX = scale_number(x, 0, WINDOW_WIDTH, minimumReal, maximumReal);
+                    double mouseY = scale_number(y, 0, WINDOW_HEIGHT, minimumComplex, maximumComplex);
+                    
+                    // Calculate the offset from current center to mouse position
+                    double dx = mouseX - centerX;
+                    double dy = mouseY - centerY;
+
+                    // Apply zoom
+                    double zoomFactor = 0.9;
+                    zoomScale *= zoomFactor;
+                    
+                    // Adjust center position to keep mouse point invariant
+                    centerX = mouseX - dx * zoomFactor;
+                    centerY = mouseY - dy * zoomFactor;
                 }//end if
 
                 /*Zooming in and Out*/
